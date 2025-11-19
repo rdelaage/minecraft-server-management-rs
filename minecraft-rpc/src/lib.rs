@@ -51,9 +51,21 @@ pub struct TypedGameRule {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserBan {
     reason: String,
-    expires: String,
-    source: String,
+    expires: Option<String>,
+    source: Option<String>,
     player: Player,
+}
+
+impl UserBan {
+    // was not able to understand expires and source (no doc)
+    pub fn new(player_name: &str, reason: &str) -> Self {
+        UserBan {
+            reason: reason.to_string(),
+            expires: None,
+            source: None,
+            player: player_name.parse().unwrap(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -89,6 +101,17 @@ pub struct Player {
     pub id: Option<String>,
 }
 
+impl FromStr for Player {
+    type Err = Error;
+    // Enable "player".parse(). Should never fail, unwrap is safe
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Player {
+            name: s.to_string(),
+            id: None,
+        })
+    }
+}
+
 #[derive(Debug)]
 pub struct Error;
 
@@ -99,16 +122,6 @@ impl std::fmt::Display for Error {
 }
 
 impl std::error::Error for Error {}
-
-impl FromStr for Player {
-    type Err = Error;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Player {
-            name: s.to_string(),
-            id: None,
-        })
-    }
-}
 
 pub trait ClientTrait {
     /*************
@@ -132,6 +145,24 @@ pub trait ClientTrait {
     fn allowlist_clear(
         &self,
     ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
+
+    /********
+     * BANS *
+     ********/
+    fn bans_get(&self) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
+    fn bans_set(
+        &self,
+        bans: &[UserBan],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
+    fn bans_add(
+        &self,
+        bans: &[UserBan],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
+    fn bans_remove(
+        &self,
+        players: &[Player],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
+    fn bans_clear(&self) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
 }
 
 struct Client {
@@ -189,5 +220,44 @@ impl ClientTrait for Client {
             .request("minecraft:allowlist/clear", rpc_params![])
             .await?;
         Ok(players)
+    }
+
+    /********
+     * BANS *
+     ********/
+    async fn bans_get(&self) -> anyhow::Result<Vec<UserBan>> {
+        let bans: Vec<UserBan> = self
+            .ws_client
+            .request("minecraft:bans", rpc_params![])
+            .await?;
+        Ok(bans)
+    }
+    async fn bans_set(&self, bans: &[UserBan]) -> anyhow::Result<Vec<UserBan>> {
+        let bans: Vec<UserBan> = self
+            .ws_client
+            .request("minecraft:bans/set", rpc_params![bans])
+            .await?;
+        Ok(bans)
+    }
+    async fn bans_add(&self, bans: &[UserBan]) -> anyhow::Result<Vec<UserBan>> {
+        let bans: Vec<UserBan> = self
+            .ws_client
+            .request("minecraft:bans/add", rpc_params![bans])
+            .await?;
+        Ok(bans)
+    }
+    async fn bans_remove(&self, players: &[Player]) -> anyhow::Result<Vec<UserBan>> {
+        let bans: Vec<UserBan> = self
+            .ws_client
+            .request("minecraft:bans/remove", rpc_params![players])
+            .await?;
+        Ok(bans)
+    }
+    async fn bans_clear(&self) -> anyhow::Result<Vec<UserBan>> {
+        let bans: Vec<UserBan> = self
+            .ws_client
+            .request("minecraft:bans/clear", rpc_params![])
+            .await?;
+        Ok(bans)
     }
 }
