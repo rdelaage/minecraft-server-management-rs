@@ -2,6 +2,11 @@
 name = "minecraft-rpc"
 version = "0.1.0"
 edition = "2024"
+license-file = "../LICENSE.txt"
+description = "A Minecraft Server Management Protocol client implementation in Rust"
+homepage = "https://git.delaage.fr/rdelaage/minecraft-server-management-rs"
+repository = "https://git.delaage.fr/rdelaage/minecraft-server-management-rs"
+readme = "../README.md"
 
 [dependencies]
 anyhow = "1.0.100"
