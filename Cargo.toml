@@ -6,6 +6,5 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.100"
 clap = { version = "4.5.52", features = ["derive"] }
-jsonrpsee = { version = "0.26.0", features = ["ws-client"] }
-serde = "1.0.228"
+minecraft-rpc = { path = "./minecraft-rpc" }
 tokio = { version = "1.48.0", features = ["full"] }

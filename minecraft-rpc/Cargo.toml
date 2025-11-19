@@ -1,0 +1,9 @@
+[package]
+name = "minecraft-rpc"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.100"
+jsonrpsee = { version = "0.26.0", features = ["ws-client"] }
+serde = "1.0.228"
