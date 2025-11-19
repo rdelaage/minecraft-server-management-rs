@@ -17,5 +17,9 @@ async fn main() -> anyhow::Result<()> {
     let client = minecraft_rpc::new_client(&args.url, &args.secret).await?;
     let players = client.allowlist_get().await?;
     println!("{players:?}");
+    let players = client.allowlist_clear().await?;
+    println!("{players:?}");
+    let players = client.allowlist_set(&["Dervom".parse()?, "TitanesK".parse()?]).await?;
+    println!("{players:?}");
     Ok(())
 }

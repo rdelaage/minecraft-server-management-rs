@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use jsonrpsee::core::client::ClientT;
 use jsonrpsee::rpc_params;
 use jsonrpsee::ws_client::{HeaderMap, HeaderValue, WsClient, WsClientBuilder};
@@ -83,12 +85,51 @@ pub struct Operator {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Player {
-    name: String,
-    id: String,
+    pub name: String,
+    pub id: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct Error;
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MinecraftRpcError")
+    }
+}
+
+impl std::error::Error for Error {}
+
+impl FromStr for Player {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Player {
+            name: s.to_string(),
+            id: None,
+        })
+    }
 }
 
 pub trait ClientTrait {
+    /*************
+     * ALLOWLIST *
+     *************/
     fn allowlist_get(
+        &self,
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
+    fn allowlist_set(
+        &self,
+        players: &[Player],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
+    fn allowlist_add(
+        &self,
+        players: &[Player],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
+    fn allowlist_remove(
+        &self,
+        players: &[Player],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
+    fn allowlist_clear(
         &self,
     ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
 }
@@ -111,10 +152,41 @@ pub async fn new_client(url: &str, secret: &str) -> anyhow::Result<impl ClientTr
 }
 
 impl ClientTrait for Client {
+    /*************
+     * ALLOWLIST *
+     *************/
     async fn allowlist_get(&self) -> anyhow::Result<Vec<Player>> {
         let players: Vec<Player> = self
             .ws_client
             .request("minecraft:allowlist", rpc_params![])
+            .await?;
+        Ok(players)
+    }
+    async fn allowlist_set(&self, players: &[Player]) -> anyhow::Result<Vec<Player>> {
+        let players: Vec<Player> = self
+            .ws_client
+            .request("minecraft:allowlist/set", rpc_params![players])
+            .await?;
+        Ok(players)
+    }
+    async fn allowlist_add(&self, players: &[Player]) -> anyhow::Result<Vec<Player>> {
+        let players: Vec<Player> = self
+            .ws_client
+            .request("minecraft:allowlist/add", rpc_params![players])
+            .await?;
+        Ok(players)
+    }
+    async fn allowlist_remove(&self, players: &[Player]) -> anyhow::Result<Vec<Player>> {
+        let players: Vec<Player> = self
+            .ws_client
+            .request("minecraft:allowlist/remove", rpc_params![players])
+            .await?;
+        Ok(players)
+    }
+    async fn allowlist_clear(&self) -> anyhow::Result<Vec<Player>> {
+        let players: Vec<Player> = self
+            .ws_client
+            .request("minecraft:allowlist/clear", rpc_params![])
             .await?;
         Ok(players)
     }
