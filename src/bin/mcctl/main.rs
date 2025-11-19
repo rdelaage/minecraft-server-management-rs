@@ -55,28 +55,50 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let client = minecraft_rpc::new_client(&cli.url, &cli.secret).await?;
     match &cli.command {
-        Command::Allowlist(args) => {
-            match &args.command {
-                AllowlistCommand::Get => {
-                    let players = client.allowlist_get().await?;
-                    println!("{players:?}");
-                },
-                AllowlistCommand::Clear => {
-                    let players = client.allowlist_clear().await?;
-                    println!("{players:?}");
-                },
-                AllowlistCommand::Set(args) => {
-                    let players = client.allowlist_set(&args.players.iter().map(|s| s.parse::<minecraft_rpc::Player>().unwrap()).collect::<Vec<minecraft_rpc::Player>>()).await?;
-                    println!("{players:?}");
-                },
-                AllowlistCommand::Add(args) => {
-                    let players = client.allowlist_add(&args.players.iter().map(|s| s.parse::<minecraft_rpc::Player>().unwrap()).collect::<Vec<minecraft_rpc::Player>>()).await?;
-                    println!("{players:?}");
-                },
-                AllowlistCommand::Remove(args) => {
-                    let players = client.allowlist_remove(&args.players.iter().map(|s| s.parse::<minecraft_rpc::Player>().unwrap()).collect::<Vec<minecraft_rpc::Player>>()).await?;
-                    println!("{players:?}");
-                },
+        Command::Allowlist(args) => match &args.command {
+            AllowlistCommand::Get => {
+                let players = client.allowlist_get().await?;
+                println!("{players:?}");
+            }
+            AllowlistCommand::Clear => {
+                let players = client.allowlist_clear().await?;
+                println!("{players:?}");
+            }
+            AllowlistCommand::Set(args) => {
+                let players = client
+                    .allowlist_set(
+                        &args
+                            .players
+                            .iter()
+                            .map(|s| s.parse::<minecraft_rpc::Player>().unwrap())
+                            .collect::<Vec<minecraft_rpc::Player>>(),
+                    )
+                    .await?;
+                println!("{players:?}");
+            }
+            AllowlistCommand::Add(args) => {
+                let players = client
+                    .allowlist_add(
+                        &args
+                            .players
+                            .iter()
+                            .map(|s| s.parse::<minecraft_rpc::Player>().unwrap())
+                            .collect::<Vec<minecraft_rpc::Player>>(),
+                    )
+                    .await?;
+                println!("{players:?}");
+            }
+            AllowlistCommand::Remove(args) => {
+                let players = client
+                    .allowlist_remove(
+                        &args
+                            .players
+                            .iter()
+                            .map(|s| s.parse::<minecraft_rpc::Player>().unwrap())
+                            .collect::<Vec<minecraft_rpc::Player>>(),
+                    )
+                    .await?;
+                println!("{players:?}");
             }
         },
     }
