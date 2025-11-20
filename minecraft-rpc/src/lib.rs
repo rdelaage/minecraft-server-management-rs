@@ -50,7 +50,7 @@ pub struct TypedGameRule {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserBan {
-    reason: String,
+    reason: Option<String>,
     expires: Option<String>,
     source: Option<String>,
     player: Player,
@@ -58,9 +58,9 @@ pub struct UserBan {
 
 impl UserBan {
     // was not able to understand expires and source (no doc)
-    pub fn new(player_name: &str, reason: &str) -> Self {
+    pub fn new(player_name: &str, reason: Option<String>) -> Self {
         UserBan {
-            reason: reason.to_string(),
+            reason: reason,
             expires: None,
             source: None,
             player: player_name.parse().unwrap(),

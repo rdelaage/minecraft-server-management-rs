@@ -70,14 +70,14 @@ enum BansCommand {
 #[derive(Args)]
 struct BansSetArgs {
     #[arg(long)]
-    reason: String,
+    reason: Option<String>,
     players: Vec<String>,
 }
 
 #[derive(Args)]
 struct BansAddArgs {
     #[arg(long)]
-    reason: String,
+    reason: Option<String>,
     players: Vec<String>,
 }
 
@@ -141,35 +141,35 @@ async fn main() -> anyhow::Result<()> {
             BansCommand::Get => {
                 let bans = client.bans_get().await?;
                 println!("{bans:?}");
-            }
+            },
             BansCommand::Clear => {
                 let bans = client.bans_clear().await?;
                 println!("{bans:?}");
-            }
+            },
             BansCommand::Set(args) => {
                 let bans = client
                     .bans_set(
                         &args
                             .players
                             .iter()
-                            .map(|s| minecraft_rpc::UserBan::new(s, &args.reason))
+                            .map(|p| minecraft_rpc::UserBan::new(p, args.reason.clone()))
                             .collect::<Vec<minecraft_rpc::UserBan>>(),
                     )
                     .await?;
                 println!("{bans:?}");
-            }
+            },
             BansCommand::Add(args) => {
                 let bans = client
                     .bans_add(
                         &args
                             .players
                             .iter()
-                            .map(|s| minecraft_rpc::UserBan::new(s, &args.reason))
+                            .map(|p| minecraft_rpc::UserBan::new(p, args.reason.clone()))
                             .collect::<Vec<minecraft_rpc::UserBan>>(),
                     )
                     .await?;
                 println!("{bans:?}");
-            }
+            },
             BansCommand::Remove(args) => {
                 let bans = client
                     .bans_remove(
@@ -181,7 +181,7 @@ async fn main() -> anyhow::Result<()> {
                     )
                     .await?;
                 println!("{bans:?}");
-            }
+            },
         },
     }
     Ok(())
