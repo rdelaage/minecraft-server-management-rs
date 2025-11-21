@@ -13,11 +13,28 @@ pub struct UntypedGameRule {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IncomingIPBan {
-    reason: String,
-    expires: String,
-    ip: String,
-    source: String,
-    player: Player,
+    reason: Option<String>,
+    expires: Option<String>,
+    ip: Option<String>,
+    source: Option<String>,
+    player: Option<Player>,
+}
+
+impl IncomingIPBan {
+    // was not able to understand expires and source (no doc)
+    pub fn new(item: &str, reason: Option<String>, is_ip: bool) -> Self {
+        IncomingIPBan {
+            reason: reason,
+            expires: None,
+            source: None,
+            ip: if is_ip { Some(item.to_string()) } else { None },
+            player: if !is_ip {
+                Some(item.parse().unwrap())
+            } else {
+                None
+            },
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -35,10 +52,22 @@ pub struct KickPlayer {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct IPBan {
-    reason: String,
-    expires: String,
+    reason: Option<String>,
+    expires: Option<String>,
     ip: String,
-    source: String,
+    source: Option<String>,
+}
+
+impl IPBan {
+    // was not able to understand expires and source (no doc)
+    pub fn new(ip: &str, reason: Option<String>) -> Self {
+        IPBan {
+            reason: reason,
+            expires: None,
+            source: None,
+            ip: ip.to_string(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -163,6 +192,25 @@ pub trait ClientTrait {
         players: &[Player],
     ) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
     fn bans_clear(&self) -> impl std::future::Future<Output = anyhow::Result<Vec<UserBan>>> + Send;
+
+    /***********
+     * IP BANS *
+     ***********/
+    fn ip_bans_get(&self) -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
+    fn ip_bans_set(
+        &self,
+        ip_bans: &[IPBan],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
+    fn ip_bans_add(
+        &self,
+        incomming_ip_bans: &[IncomingIPBan],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
+    fn ip_bans_remove(
+        &self,
+        ips: &[String],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
+    fn ip_bans_clear(&self)
+    -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
 }
 
 struct Client {
@@ -257,6 +305,45 @@ impl ClientTrait for Client {
         let bans: Vec<UserBan> = self
             .ws_client
             .request("minecraft:bans/clear", rpc_params![])
+            .await?;
+        Ok(bans)
+    }
+
+    /***********
+     * IP BANS *
+     ***********/
+    async fn ip_bans_get(&self) -> anyhow::Result<Vec<IPBan>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:ip_bans", rpc_params![])
+            .await?;
+        Ok(bans)
+    }
+    async fn ip_bans_set(&self, bans: &[IPBan]) -> anyhow::Result<Vec<IPBan>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:ip_bans/set", rpc_params![bans])
+            .await?;
+        Ok(bans)
+    }
+    async fn ip_bans_add(&self, bans: &[IncomingIPBan]) -> anyhow::Result<Vec<IPBan>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:ip_bans/add", rpc_params![bans])
+            .await?;
+        Ok(bans)
+    }
+    async fn ip_bans_remove(&self, ips: &[String]) -> anyhow::Result<Vec<IPBan>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:ip_bans/remove", rpc_params![ips])
+            .await?;
+        Ok(bans)
+    }
+    async fn ip_bans_clear(&self) -> anyhow::Result<Vec<IPBan>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:ip_bans/clear", rpc_params![])
             .await?;
         Ok(bans)
     }

@@ -20,6 +20,8 @@ enum Command {
     Allowlist(AllowlistArgs),
     /// Bans related actions
     Bans(BansArgs),
+    /// IP Bans related actions
+    IPBans(IPBansArgs),
 }
 
 #[derive(Args)]
@@ -86,6 +88,42 @@ struct BansRemoveArgs {
     players: Vec<String>,
 }
 
+#[derive(Args)]
+struct IPBansArgs {
+    #[command(subcommand)]
+    command: IPBansCommand,
+}
+
+#[derive(Subcommand)]
+enum IPBansCommand {
+    Get,
+    Clear,
+    Set(IPBansSetArgs),
+    Add(IPBansAddArgs),
+    Remove(IPBansRemoveArgs),
+}
+
+#[derive(Args)]
+struct IPBansSetArgs {
+    #[arg(long)]
+    reason: Option<String>,
+    ips: Vec<String>,
+}
+
+#[derive(Args)]
+struct IPBansAddArgs {
+    #[arg(long)]
+    is_ip: bool,
+    #[arg(long)]
+    reason: Option<String>,
+    items: Vec<String>,
+}
+
+#[derive(Args)]
+struct IPBansRemoveArgs {
+    ips: Vec<String>,
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -141,11 +179,11 @@ async fn main() -> anyhow::Result<()> {
             BansCommand::Get => {
                 let bans = client.bans_get().await?;
                 println!("{bans:?}");
-            },
+            }
             BansCommand::Clear => {
                 let bans = client.bans_clear().await?;
                 println!("{bans:?}");
-            },
+            }
             BansCommand::Set(args) => {
                 let bans = client
                     .bans_set(
@@ -157,7 +195,7 @@ async fn main() -> anyhow::Result<()> {
                     )
                     .await?;
                 println!("{bans:?}");
-            },
+            }
             BansCommand::Add(args) => {
                 let bans = client
                     .bans_add(
@@ -169,7 +207,7 @@ async fn main() -> anyhow::Result<()> {
                     )
                     .await?;
                 println!("{bans:?}");
-            },
+            }
             BansCommand::Remove(args) => {
                 let bans = client
                     .bans_remove(
@@ -181,7 +219,51 @@ async fn main() -> anyhow::Result<()> {
                     )
                     .await?;
                 println!("{bans:?}");
-            },
+            }
+        },
+        Command::IPBans(args) => match &args.command {
+            IPBansCommand::Get => {
+                let ip_bans = client.ip_bans_get().await?;
+                println!("{ip_bans:?}");
+            }
+            IPBansCommand::Clear => {
+                let ip_bans = client.ip_bans_clear().await?;
+                println!("{ip_bans:?}");
+            }
+            IPBansCommand::Set(args) => {
+                let ip_bans = client
+                    .ip_bans_set(
+                        &args
+                            .ips
+                            .iter()
+                            .map(|i| minecraft_rpc::IPBan::new(i, args.reason.clone()))
+                            .collect::<Vec<minecraft_rpc::IPBan>>(),
+                    )
+                    .await?;
+                println!("{ip_bans:?}");
+            }
+            IPBansCommand::Add(args) => {
+                let ip_bans = client
+                    .ip_bans_add(
+                        &args
+                            .items
+                            .iter()
+                            .map(|i| {
+                                minecraft_rpc::IncomingIPBan::new(
+                                    i,
+                                    args.reason.clone(),
+                                    args.is_ip,
+                                )
+                            })
+                            .collect::<Vec<minecraft_rpc::IncomingIPBan>>(),
+                    )
+                    .await?;
+                println!("{ip_bans:?}");
+            }
+            IPBansCommand::Remove(args) => {
+                let ip_bans = client.ip_bans_remove(&args.ips).await?;
+                println!("{ip_bans:?}");
+            }
         },
     }
     Ok(())
