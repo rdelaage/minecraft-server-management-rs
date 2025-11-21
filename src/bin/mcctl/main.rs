@@ -22,6 +22,8 @@ enum Command {
     Bans(BansArgs),
     /// IP Bans related actions
     IPBans(IPBansArgs),
+    /// Players related actions
+    Players(PlayersArgs),
 }
 
 #[derive(Args)]
@@ -122,6 +124,25 @@ struct IPBansAddArgs {
 #[derive(Args)]
 struct IPBansRemoveArgs {
     ips: Vec<String>,
+}
+
+#[derive(Args)]
+struct PlayersArgs {
+    #[command(subcommand)]
+    command: PlayersCommand,
+}
+
+#[derive(Subcommand)]
+enum PlayersCommand {
+    Get,
+    Kick(PlayersKickArgs),
+}
+
+#[derive(Args)]
+struct PlayersKickArgs {
+    #[arg(long)]
+    message: Option<String>,
+    players: Vec<String>,
 }
 
 #[tokio::main]
@@ -263,6 +284,24 @@ async fn main() -> anyhow::Result<()> {
             IPBansCommand::Remove(args) => {
                 let ip_bans = client.ip_bans_remove(&args.ips).await?;
                 println!("{ip_bans:?}");
+            }
+        },
+        Command::Players(args) => match &args.command {
+            PlayersCommand::Get => {
+                let players = client.players_get().await?;
+                println!("{players:?}");
+            }
+            PlayersCommand::Kick(args) => {
+                let players = client
+                    .players_kick(
+                        &args
+                            .players
+                            .iter()
+                            .map(|p| minecraft_rpc::KickPlayer::new(p, args.message.clone()))
+                            .collect::<Vec<minecraft_rpc::KickPlayer>>(),
+                    )
+                    .await?;
+                println!("{players:?}");
             }
         },
     }

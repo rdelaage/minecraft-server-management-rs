@@ -47,7 +47,16 @@ pub struct SystemMessage {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct KickPlayer {
     player: Player,
-    message: Message,
+    message: Option<Message>,
+}
+
+impl KickPlayer {
+    pub fn new(player_name: &str, message: Option<String>) -> Self {
+        KickPlayer {
+            player: player_name.parse().unwrap(),
+            message: message.map(|m| m.parse().unwrap()),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -99,9 +108,21 @@ impl UserBan {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Message {
-    translatable: String,
-    translatable_params: Vec<String>,
+    translatable: Option<String>,
+    translatable_params: Option<Vec<String>>,
     literal: String,
+}
+
+impl FromStr for Message {
+    type Err = Error;
+    // Enable "player".parse(). Should never fail, unwrap is safe
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Message {
+            translatable: None,
+            translatable_params: None,
+            literal: s.to_string(),
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -211,6 +232,15 @@ pub trait ClientTrait {
     ) -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
     fn ip_bans_clear(&self)
     -> impl std::future::Future<Output = anyhow::Result<Vec<IPBan>>> + Send;
+
+    /***********
+     * PLAYERS *
+     ***********/
+    fn players_get(&self) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
+    fn players_kick(
+        &self,
+        players: &[KickPlayer],
+    ) -> impl std::future::Future<Output = anyhow::Result<Vec<Player>>> + Send;
 }
 
 struct Client {
@@ -344,6 +374,24 @@ impl ClientTrait for Client {
         let bans = self
             .ws_client
             .request("minecraft:ip_bans/clear", rpc_params![])
+            .await?;
+        Ok(bans)
+    }
+
+    /***********
+     * PLAYERS *
+     ***********/
+    async fn players_get(&self) -> anyhow::Result<Vec<Player>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:players", rpc_params![])
+            .await?;
+        Ok(bans)
+    }
+    async fn players_kick(&self, players: &[KickPlayer]) -> anyhow::Result<Vec<Player>> {
+        let bans = self
+            .ws_client
+            .request("minecraft:players/kick", rpc_params![players])
             .await?;
         Ok(bans)
     }
